@@ -21,7 +21,7 @@ public class OutputController {
     // stream of JSON lines
     @GetMapping(value = "/sps-aggregate",
         produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
-    public Flux<String> getAllJsonStream() {
+    public Flux<String> getAggregateJsonStream() {
         try {
             BufferedReader aggregatedReader = initiateProcessing();
             return Flux.generate(
