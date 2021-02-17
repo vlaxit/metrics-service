@@ -2,16 +2,23 @@ package spsapp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.URL;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 import spsaggregate.SpsAggregator;
 
 public class SpsAggregatorApp {
 
-    private static int MIN_BUFFER_SIZE = 3;
+    private static final int MIN_BUFFER_SIZE = 3;
     protected static int BUFFER_SIZE;
+    private static final String SPS_URL = "https://tweet-service.herokuapp.com/sps";
 
     public static void main(String[] args) throws Exception {
         if(args.length > 0) {
@@ -22,7 +29,7 @@ public class SpsAggregatorApp {
         System.out.println("Buffer size (sec): " + BUFFER_SIZE);
 
         try {
-            BufferedReader inputReader = urlStremReader();
+            BufferedReader inputReader = bufferedReaderFromFlux();
 
             PipedInputStream resultStream = new PipedInputStream();
             PipedOutputStream aggregatedStream = new PipedOutputStream();
@@ -44,12 +51,42 @@ public class SpsAggregatorApp {
         }
     }
 
-    private static BufferedReader urlStremReader() throws IOException {
-        URL spss = new URL("https://tweet-service.herokuapp.com/sps");
-        //URL spss = new URL("http://localhost:8080/sps-aggregate");
+    public static BufferedReader urlBufferedReader() throws IOException {
+        URL spss = new URL(SPS_URL);
         BufferedReader in = new BufferedReader(
             new InputStreamReader(spss.openStream()));
         return in;
+    }
+
+    public static BufferedReader bufferedReaderFromFlux() throws IOException {
+        BufferedReader in = new BufferedReader(
+            new InputStreamReader(
+                getInputStreamFromFluxDataBuffer(
+                    getInputAsFlux(SPS_URL))));
+        return in;
+    }
+
+    private static Flux<DataBuffer> getInputAsFlux(String url) {
+        WebClient webClient = WebClient.create(url);
+        return webClient.get()
+            .retrieve()
+            .bodyToFlux(DataBuffer.class)
+            .doOnError(throwable -> System.err.println(throwable.fillInStackTrace()));
+    }
+
+    private static InputStream getInputStreamFromFluxDataBuffer(Flux<DataBuffer> data) throws IOException {
+        PipedOutputStream osPipe = new PipedOutputStream();
+        PipedInputStream isPipe = new PipedInputStream(osPipe);
+        DataBufferUtils.write(data, osPipe)
+            .subscribeOn(Schedulers.boundedElastic())
+            .doOnComplete(() -> {
+                try {
+                    osPipe.close();
+                } catch (IOException ignored) {
+                }
+            })
+            .subscribe(DataBufferUtils.releaseConsumer());
+        return isPipe;
     }
 
 }
