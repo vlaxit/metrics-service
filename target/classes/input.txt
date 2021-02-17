@@ -1,7 +1,0 @@
-data: {"device":"xbox_one_x","sev":"error","title":"orange is the new black","country":"BR","time":1613239895518}
-data: {"device":"android","sev":"success","title":"stranger things","country":"JP","time":1613239895518}
-data: {"device":"xbox_360","sev":"success","title":"cuervos","country":"IND","time":1613239895518}
-data: {"device":"xbox_360","sev":"success","title":"cuervos","country":"IND","time":1613239895518}
-data: {"device":"ps3","sev":"success","title":"cuervos","country":"USA","time":1613239895518}
-data: {"device":"xbox_360","sev":"success","title":"matrix","country":"IND","time":1613239895518}
-data: {"device":"xbox_360","sev":"success","title":"matrix","country":"IND","time":1613239895518}

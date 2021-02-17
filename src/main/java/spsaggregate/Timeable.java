@@ -1,4 +1,4 @@
-package spsapp;
+package spsaggregate;
 
 public interface Timeable {
 

@@ -1,0 +1,10 @@
+spsaggregate\SpsAggregate.class
+spsapp\ConsoleOutputter.class
+spsaggregate\Timeable.class
+spsaggregate\SpsAggregator.class
+spsaggregate\SpsJaksonMapper.class
+spsapp\SpsAggregatorApp.class
+restout\RestApi.class
+spsaggregate\Sps.class
+restout\OutputController.class
+spsaggregate\ByTimeAggregator.class

@@ -1,7 +1,6 @@
-package spsapp;
+package spsaggregate;
 
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class Sps implements Timeable {
 

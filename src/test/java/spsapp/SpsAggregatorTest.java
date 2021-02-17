@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import org.junit.jupiter.api.Test;
+import spsaggregate.SpsAggregator;
 
 class SpsAggregatorTest {
 
@@ -21,13 +22,13 @@ class SpsAggregatorTest {
     private SpsAggregator spsAggregator;
 
     @Test
-    void runTest() throws Exception{
+    void runExampleDataTest() throws Exception{
         // given
         BufferedReader inputReader = fileReader();
         PipedInputStream resultStream = new PipedInputStream();
         PipedOutputStream aggregatedStream = new PipedOutputStream();
         resultStream.connect(aggregatedStream);
-        spsAggregator = new SpsAggregator(inputReader, aggregatedStream);
+        spsAggregator = new SpsAggregator(inputReader, aggregatedStream, 3);
         // when
         spsAggregator.run();
         // then

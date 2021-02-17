@@ -1,10 +1,12 @@
-package spsapp;
+package spsaggregate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PipedOutputStream;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 
 public class SpsAggregator implements Runnable{
 
@@ -14,10 +16,10 @@ public class SpsAggregator implements Runnable{
     private final ByTimeAggregator<Sps> aggregator;
     private final ObjectMapper mapper;
 
-    public SpsAggregator(BufferedReader in, PipedOutputStream aggregatedStream) {
+    public SpsAggregator(BufferedReader in, PipedOutputStream aggregatedStream, int bufferSize) {
         this.in = in;
         this.aggregatedStream = aggregatedStream;
-        aggregator = new ByTimeAggregator<Sps>();
+        aggregator = new ByTimeAggregator<Sps>(bufferSize);
         mapper = new ObjectMapper();
     }
 
@@ -30,8 +32,8 @@ public class SpsAggregator implements Runnable{
         } catch(IOException e){
             System.err.println("Something went wrong: " + e);
         } finally {
-            outputResidualBufferedData();
             try {
+                outputResidualBufferedData();
                 in.close();
                 aggregatedStream.close();
             } catch (IOException e){
@@ -40,21 +42,22 @@ public class SpsAggregator implements Runnable{
         }
     }
 
-    private void outputResidualBufferedData() {
-        aggregator.releaseAll().forEach(i -> putResultToStream(i, aggregatedStream));
+    private void outputResidualBufferedData() throws IOException {
+        for (Map<Sps, Long> i : aggregator.releaseAll()) {
+            putResultToStream(Optional.of(i), aggregatedStream);
+        }
     }
 
     private void processInputLine(String line) throws IOException{
-        System.out.println(line);
+        //System.out.println(line);
         Sps sps;
-        Map<Sps, Long> output;
+        Optional<Map<Sps, Long>> output;
         if (line != null && !line.isEmpty()) {
-            //System.out.println("parsing sps from json...");
             sps = SpsJaksonMapper.fromString(line);
             if (null == sps) {
                 System.out.println("Aggregated result might be affected by the malformed input: " + line);
             } else if (!sps.isSuccess()) {
-                System.out.println("Skipping unsuccessfull input: " + line);
+                //System.out.println("Skipping unsuccessfull input: " + line);
             } else {
                 output = aggregator.put(sps);
                 putResultToStream(output, aggregatedStream);
@@ -62,12 +65,13 @@ public class SpsAggregator implements Runnable{
         }
     }
 
-    private void putResultToStream(Map<Sps, Long> output, PipedOutputStream stream) {
-        //replace with optional
-        if(output != null) {
-            output.entrySet().stream()
-                .map(i -> toAggregate(i.getKey(), i.getValue()))
-                .forEach(j -> writeToStream(j, stream));
+    private void putResultToStream(Optional<Map<Sps, Long>> output, PipedOutputStream stream)
+        throws IOException {
+        if(output.isPresent()) {
+            for (Entry<Sps, Long> i : output.get().entrySet()) {
+                SpsAggregate j = toAggregate(i.getKey(), i.getValue());
+                writeToStream(j, stream);
+            }
         }
     }
 
@@ -75,21 +79,14 @@ public class SpsAggregator implements Runnable{
         return new SpsAggregate(sps, count);
     }
 
-    private void writeToStream(SpsAggregate spsAgregate, PipedOutputStream stream) {
+    private void writeToStream(SpsAggregate spsAgregate, PipedOutputStream stream) throws IOException{
         try {
             String value = mapper.writeValueAsString(spsAgregate);
             stream.write((value + "\n").getBytes());
         } catch(IOException e){
             System.err.println("Error while writing into output stream: " + e);
+            stream.close();
+            throw e;
         }
     }
-
-    private void writeToStream(String value, PipedOutputStream stream) {
-        try {
-            stream.write(("[From buffer] " + value + "\n").getBytes());
-        } catch(IOException e){
-            System.err.println("Error while writing into output stream: " + e);
-        }
-    }
-
 }
