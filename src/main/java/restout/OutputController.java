@@ -32,8 +32,7 @@ public class OutputController {
                     );
                 });
         } catch (Exception e) {
-            System.err.println("Error while fetching aggregate");
-            e.printStackTrace();
+            System.err.println("Error while fetching aggregate: " + e);
             return Flux.empty();
         }
     }
