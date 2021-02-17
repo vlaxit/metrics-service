@@ -29,12 +29,6 @@ mvn clean install
 mvn exec:java -Dexec.mainClass=spsapp.SpsAggregatorApp -Dexec.args="7"
 </code>
 
-##### Start processing:
-Point to endpoint address in a browser:
-<code>
-  http://localhost:8080/sps-aggregate
-</code>
-
 Where the first arg says how many seconds of data we want to buffer.
 
 #### Rest api output
@@ -52,3 +46,9 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--bufferSize=8"
 </code>
 
 Where the --bufferSize parameter defines how many seconds of data we want to buffer.
+
+##### Start processing:
+Point to endpoint address in a browser:
+<code>
+  http://localhost:8080/sps-aggregate
+</code>
